@@ -75,7 +75,7 @@ save( file = paste0(path, 'DF_str.RData'),
 
 DF <- DF_str
 
-load()
+load( file = paste0(path, 'DF_str.RData') )
 
 # ## Get policyends as date format:
 # ## ------------------------------
