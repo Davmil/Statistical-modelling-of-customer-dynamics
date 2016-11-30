@@ -54,28 +54,34 @@ source( paste0( path, 'Code/preparations.R' ) )
 
 source( paste0( path, 'Code/Structure.R' ) )
 
-DF_str <- Restructure( DF, tolerance = 2 )
-
-save( file = paste0(path, 'DF.RData'),
-      list = 'DF' )
-
-idx <- DF_str$clientid[ DF_str$gep > 5300 | DF_str$gep < 10 ]
-
-DF_str <- DF_str[! DF_str$clientid %in% idx, ]
-
-DF_str <- cbind( DF_str, gep_annual = DF_str$gep / DF_str$days_in_period * 365 )
-
-DF_str <- DF_str[! DF_str$gep_annual > 5300, ]
-
-rm( idx )
-
-save( file = paste0(path, 'DF_str.RData'),
-      list = 'DF_str' )
-
-
-DF <- DF_str
+# DF_str <- Restructure( DF, tolerance = 2 )
+# 
+# save( file = paste0(path, 'DF.RData'),
+#       list = 'DF' )
+# 
+# idx <- DF_str$clientid[ DF_str$gep > 5300 | DF_str$gep < 10 ]
+# 
+# DF_str <- DF_str[! DF_str$clientid %in% idx, ]
+# 
+# DF_str <- cbind( DF_str, gep_annual = DF_str$gep / DF_str$days_in_period * 365 )
+# 
+# DF_str <- DF_str[! DF_str$gep_annual > 5300, ]
+# 
+# rm( idx )
+# 
+# save( file = paste0(path, 'DF_str.RData'),
+#       list = 'DF_str' )
 
 load( file = paste0(path, 'DF_str.RData') )
+
+DF_raw <- DF
+DF     <- DF_str
+
+rm(DF_str)
+
+## Missing Distribution Channel -> Broker
+## --------------------------------------
+DF[DF$distribution_channel=="","distribution_channel"] <- "Broker"
 
 # ## Get policyends as date format:
 # ## ------------------------------
