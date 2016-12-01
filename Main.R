@@ -1,7 +1,7 @@
 # =============================================================================#
 # Consulting: Munich Re:
 # =============================================================================#
-# blabla
+
 ## Packages:
 ## ---------
 
@@ -35,7 +35,7 @@ if ( file.exists( paste0( path, 'data/Movement.csv') ) ) {
   DF <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
                    header = TRUE )
 }
-s
+
 source( paste0( path, 'Code/functions.R' ) )
 
 # -----------------------------------------------------------------------------#
