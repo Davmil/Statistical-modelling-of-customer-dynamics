@@ -36,7 +36,7 @@ if ( file.exists( paste0( path, 'data/Movement.csv') ) ) {
                    header = TRUE )
 }
 
-
+# TestTest2
 source( paste0( path, 'Code/functions.R' ) )
 
 # -----------------------------------------------------------------------------#
@@ -74,6 +74,8 @@ source( paste0( path, 'Code/Structure.R' ) )
 
 load( file = paste0(path, 'DF_str.RData') )
 
+DF_o   <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
+                        header = TRUE )
 DF_raw <- DF
 DF     <- DF_str
 
