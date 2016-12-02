@@ -72,6 +72,7 @@ transform_client <- function ( DF, id, tolerance = 1 )
                         nb_clients_policy    = integer(0L),
                         Dummy_loss           = logical(0L),
                         days_in_period       = integer(0L),
+                        days_between_periods = integer(0L),
                         stringsAsFactors = FALSE )
   
   # Unique periods, for each period one row:
@@ -98,6 +99,7 @@ transform_client <- function ( DF, id, tolerance = 1 )
     df_str[i, 'policystart_year']     <- as.integer( as.character( df[idx_df[i], 'policystart_year'] ) )
     df_str[i, 'nb_clients_policy']    <- df[i, 'nb_clients_policy']
     df_str[i, 'days_in_period']       <- df[idx_df[i], 'days_in_period']
+    df_str[i, 'days_between_periods']       <- df[idx_df[i], 'days_between_periods']
     
     ## Add features, which maybe depends on more than one row:
     
