@@ -30,10 +30,14 @@ if ( dir.exists( 'C:/Users/milewskid/Documents/Consulting' ) ) {
 if ( file.exists( paste0( path, 'Data/Movement_csv.csv') ) ) {
   DF <- read.csv2( file   = paste0( path, 'Data/Movement_csv.csv'),
                    header = TRUE )
+  DF_o   <- read.csv2( file   = paste0( path, 'Data/Movement.csv'),
+                       header = TRUE )
 }
 if ( file.exists( paste0( path, 'data/Movement.csv') ) ) {
   DF <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
                    header = TRUE )
+  DF_o   <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
+                       header = TRUE )
 }
 
 source( paste0( path, 'Code/functions.R' ) )
@@ -55,88 +59,39 @@ source( paste0( path, 'Code/Structure.R' ) )
 
 # DF_str <- Restructure( DF, tolerance = 2 )
 # 
-# save( file = paste0(path, 'DF.RData'),
-#       list = 'DF' )
-# 
-# idx <- DF_str$clientid[ DF_str$gep > 5300 | DF_str$gep < 10 ]
-# 
-# DF_str <- DF_str[! DF_str$clientid %in% idx, ]
-# 
-# DF_str <- cbind( DF_str, gep_annual = DF_str$gep / DF_str$days_in_period * 365 )
-# 
-# DF_str <- DF_str[! DF_str$gep_annual > 5300, ]
-# 
-# rm( idx )
-# 
 # save( file = paste0(path, 'DF_str.RData'),
 #       list = 'DF_str' )
 
+# load restructred data
 load( file = paste0(path, 'DF_str.RData') )
 
-DF_o   <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
-                        header = TRUE )
+# drop 
+idx <- DF_str$clientid[ DF_str$gep > 5300 | DF_str$gep < 10 ]
+
+DF_str <- DF_str[! DF_str$clientid %in% idx, ]
+
+DF_str <- cbind( DF_str, gep_annual = DF_str$gep / DF_str$days_in_period * 365 )
+
+DF_str <- DF_str[! DF_str$gep_annual > 5300, ]
+
+rm( idx )
+
+
+
 DF_raw <- DF
+
+
 DF     <- DF_str
-
 rm(DF_str)
-
-## Missing Distribution Channel -> Broker
-## --------------------------------------
-DF[DF$distribution_channel=="","distribution_channel"] <- "Broker"
-
-# ## Get policyends as date format:
-# ## ------------------------------
-help <- strsplit( unlist( strsplit( DF$period, split = ' - ' ) )[seq( from = 2, to = 2 * nrow(DF), by = 2)],
-                  split = ' ' )
-
-policyend_day  <- as.integer( substring( text  = unlist( lapply( help, FUN = function(x){ x[1] } ) ),
-                                         first = 1,
-                                         last  = 2 ) )
-policyend_mon  <- unlist( lapply( help, FUN = function(x){ month_trafo( x[2] ) } ) )
-policyend_year <- unlist( lapply( help, FUN = function(x){ as.integer( x[3] ) + 2000 } ) )
-
-policyends <- as.Date( paste( policyend_year, 
-                              policyend_mon, 
-                              policyend_day, 
-                              sep = '-' ) )
-
-# ## Get next policystart as date format:
-# ## ------------------------------------
-# help <- strsplit( DF$policystart_next, split = ' ' )
-# 
-# policystart_next_day  <- as.integer( substring( text  = unlist( lapply( help, FUN = function(x){ x[1] } ) ),
-#                                                 first = 1,
-#                                                 last  = 2 ) )
-# policystart_next_mon  <- unlist( lapply( help, FUN = function(x){ month_trafo( x[2] ) } ) )
-# policystart_next_year <- unlist( lapply( help, FUN = function(x){ as.integer( x[3] ) + 2000 } ) )
-# 
-# policystart_nexts <- as.Date( paste( policystart_next_year, 
-#                                      policystart_next_mon, 
-#                                      policystart_next_day, 
-#                                      sep = '-' ) )
-# 
-# ## Paste the day between periods on the data:
-# ## ------------------------------------------
-# 
-# DF <- cbind( DF, 
-#              days_between_periods = as.integer(
-#                difftime( policystart_nexts, policyends,
-#                          units = 'days' ) ) - 1 )
-# 
-# rm( policyend_day, policyend_mon, policyend_year, 
-#     policystart_next_day, policystart_next_mon, policystart_next_year,
-#     policyends, policystart_nexts, help )
-# 
-# save( file = paste0(path, 'DF.RData'),
-#       list = 'DF' )
-
-
-load( paste0(path, 'DF.RData') )
 
 
 
 ## Regocnition of clients which cancel the contract:
 ## -------------------------------------------------
+
+## All NA's is days-between-periods exhibit a cancelation of the contract (because all policystarts and policyends in 2016 were dropped):
+
+DF[is.na(DF$days_between_periods),"days_between_periods"] <- 9000
 
 ## Easy one:
 DF[DF$days_between_periods > 30, 'product_id_next'] <- 'End'
@@ -145,6 +100,8 @@ DF[DF$days_between_periods > 30, 'planid_next']    <- 'End'
 ## Redefinition of the transitions:
 DF$product_transition <- paste( DF$product_id, DF$product_id_next, sep = ' -> ' )
 DF$plan_transition <- paste( DF$plan_id, DF$planid_next, sep = ' -> ' )
+DF$days_between_periods <- NULL
+
 
 
 # -----------------------------------------------------------------------------#
