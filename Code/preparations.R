@@ -42,6 +42,23 @@ DF <- cbind( DF,
 
 rm( help )
 
+## new variables for policystart_next/policyend_next decomposition:
+help <- strsplit(as.character(DF$policystart_next), split = ' ')
+DF <- cbind( DF,
+             policystart_next_day  = as.integer( substring( text  = unlist( lapply( help, FUN = function(x){ x[1] } ) ),
+                                                       first = 1,
+                                                       last  = 2 ) ),
+             policystart_next_mon  = unlist( lapply( help, FUN = function(x){ x[2] } ) ),
+             policystart_next_year = unlist( lapply( help, FUN = function(x){ x[3] } ) ) )
+
+help <- strsplit(as.character(DF$policyend_next), split = ' ')
+
+DF$date_start_next = as.Date( paste( DF$policystart_next_day, 
+                             month_trafo(DF$policystart_next_mon), 
+                             DF$policystart_next_year ), 
+                      format = '%d %m %y')
+
+
 
 # drop all rows with policy end == 16
 DF <- DF[-which( (DF$product_id_next == 'End' | DF$planid_next == 'End') & (DF$policyend_year == '16' | DF$policystart_year == '16')), ]
@@ -85,6 +102,15 @@ DF <- cbind( DF,
 DF_dubs <- DF %>%  
   dplyr::group_by( clientid ) %>%
   dplyr::summarise( nb_policys_clients = length( unique(policyid) ) )
+
+
+## Add variable days-between-period
+DF$days_between_periods = as.integer(
+  difftime( DF$date_start_next, DF$date_end,
+            units = 'days' ) ) - 1
+
+DF[ , !names(DF) %in% c("policystart_next_day", "policystart_next_mon", "policystart_next_year")]
+
 
 ## Delete clients with gep 0:
 DF <- DF[! DF$clientid %in% unique( DF$clientid[DF$gep == 0] ), ]
