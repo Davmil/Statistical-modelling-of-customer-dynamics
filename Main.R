@@ -20,8 +20,8 @@ if ( dir.exists( 'C:/Users/Media' ) ) {
 if ( dir.exists( 'Z:/Consulting' ) ) {
   path <- 'Z:/Consulting/'
 }
-if ( dir.exists( 'C:/Users/milewskid/Documents/Consulting' ) ) {
-  path <- 'C:/Users/milewskid/Documents/Consulting/'
+if ( dir.exists( 'C:/Users/David/Documents/Consulting' ) ) {
+  path <- 'C:/Users/David/Documents/Consulting/'
 }
 
 
@@ -84,7 +84,14 @@ DF_raw <- DF
 DF     <- DF_str
 rm(DF_str)
 
+## Missing Distribution Channel -> Broker
+## --------------------------------------
+DF[DF$distribution_channel=="","distribution_channel"] <- "Broker"
+DF$distribution_channel <- as.factor(as.character(DF$distribution_channel))
 
+DF$change <- ""
+DF[DF$product_id == DF$product_id_next, "change"] <- "no"
+DF$change[DF$change==""] <- "yes"
 
 ## Regocnition of clients which cancel the contract:
 ## -------------------------------------------------
@@ -110,25 +117,27 @@ DF$days_between_periods <- NULL
 
 ## exemplarily for product B:
 
-df1 <- DF[DF$product_id == 'B', ]
+df1 <- DF[DF$product_id == 'F', ]
 
-bar_own(table(df1$product_transition) / nrow(df1))
-barbox_own(df1$gep_annual)
+# bar_own(table(df1$product_transition) / nrow(df1))
+# barbox_own(df1$gep_annual)
 
-box_own( as.formula(df1$gep_annual ~ df1$product_transition) )
-box_own( as.formula(df1$gep ~ df1$product_transition) )
-box_own( as.formula(df1$yearofbirth ~ df1$product_transition) )
-box_own( as.formula(df1$paid_amount[df1$paid_amount > 0] ~ df1$product_transition[df1$paid_amount > 0]) )
-box_own( as.formula(df1$nb_clients_policy ~ df1$product_transition) )
-box_own( as.formula(month_trafo(df1$policystart_mon) ~ df1$product_transition) )
-
-table( df1$gender, df1$product_transition )
-table( df1$distribution_channel, df1$product_transition )
-table( df1$Dummy_loss, df1$product_transition )
+# box_own( as.formula(df1$gep_annual ~ df1$product_transition) )
+# box_own( as.formula(df1$gep ~ df1$product_transition) )
+# box_own( as.formula(df1$yearofbirth ~ df1$product_transition) )
+# box_own( as.formula(df1$paid_amount[df1$paid_amount > 0] ~ df1$product_transition[df1$paid_amount > 0]) )
+# box_own( as.formula(df1$nb_clients_policy ~ df1$product_transition) )
+# box_own( as.formula(month_trafo(df1$policystart_mon) ~ df1$product_transition) )
+# 
+# table( df1$gender, df1$product_transition )
+# table( df1$distribution_channel, df1$product_transition )
+# table( df1$Dummy_loss, df1$product_transition )
 
 
 ## Create new data.frame with interesting variables:
 ## -------------------------------------------------
+
+years <- 12:14
 
 for ( i in 1:ncol(df1) ) {
   if ( class(df1[,i]) == 'character' ) {
@@ -139,13 +148,20 @@ for ( i in 1:ncol(df1) ) {
 idx.col <- c(3,4,5,7,13,17,19,20)
 
 # Data for modelling:
-df <- df1[df1$policystart_year == '14', idx.col]
-df <- cbind( df, product_transition = df1[df1$policystart_year == '14', 'product_transition'] )
+df <- df1[df1$policystart_year %in% years, idx.col]
 
 df <- merge( x = df, 
              y = data.frame( product_transition = names( table(df$product_transition) ), 
-                              table(df$product_transition ) ), 
+                                        table(df$product_transition ) ), 
              by = 'product_transition' )
+
+if ( 'Var1' %in% names(df) ) {
+  df <- df[, -which(names(df) == 'Var1')]
+}
+# if ( 'policystart_year' %in% names(df) ) {
+#   df <- df[, -which(names(df) == 'policystart_year')]
+# }
+
 
 # Data for validation:
 df_pred <- df1[df1$policystart_year == '15', idx.col]
@@ -159,19 +175,24 @@ options( rf.cores = parallel::detectCores(),
 
 wt <-  (1 / (df$Freq / nrow(df)) ) / sum( 1 / (table(df$product_transition) / nrow(df)) )
 
+if ( 'Freq' %in% names(df) ) {
+  df <- df[, -which(names(df) == 'Freq')]
+}
+
 RF <- randomForestSRC::rfsrc( formula   = product_transition ~ .,
                               data      = df,
                               mtry      = 4,
                               ntree     = 200,
                               nodesize  = 1000,
                               imprtance = TRUE,
-                              do.trace  = TRUE,
-                              case.wt   = wt )
+                              do.trace  = TRUE )
+                              # case.wt = wt )
 
-Pred_RF <- randomForestSRC:::predict.rfsrc( RF, df_pred )
+Pred_RF <- randomForestSRC:::predict.rfsrc( RF, df_pred[,RF$xvar.names] )
+plot(RF)
 
 # Probabilitys in Matrix:
-Pred_RF$predicted
+# Pred_RF$predicted
 
 table( Pred_RF$class, df_pred$product_transition )
 
@@ -179,8 +200,8 @@ table( Pred_RF$class, df_pred$product_transition )
 ## ------------------------------------
 
 LDA <- MASS::lda( formula = product_transition ~ .,
-                  data    = df,
-                  prior   = table(df$product_transition) / nrow(df) ) # as default
+                  data    = df)
+                  #prior   = table(df$product_transition) / nrow(df) ) # as default
 
 Pred_LDA <- predict( LDA, df_pred )
 
@@ -190,8 +211,8 @@ table( Pred_LDA$class, df_pred$product_transition )
 ## --------------------------------
 
 MLR <- nnet::multinom( formula = product_transition ~ .,
-                       data    = df,
-                       weights = table(df$product_transition) / nrow(df) ) # to compare with LDA
+                       data    = df)
+                       #weights = table(df$product_transition) / nrow(df) ) # to compare with LDA
 
 Pred_MLR       <- predict( MLR, df_pred )
 Pred_MLR_probs <- predict( MLR, df_pred, type = 'probs')
