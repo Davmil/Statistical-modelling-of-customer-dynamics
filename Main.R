@@ -35,14 +35,18 @@ if ( file.exists( paste0( path, 'data/Movement.csv') ) ) {
   DF <- read.csv2( file   = paste0( path, 'data/Movement.csv'),
                    header = TRUE )
 }
-s
-source( paste0( path, 'Code/functions.R' ) )
+
+# source( paste0( path, 'Code/functions.R' ) )
+
+source( 'Code/functions.R' )
 
 # -----------------------------------------------------------------------------#
 # Data preparation:
 # -----------------------------------------------------------------------------#
 
-source( paste0( path, 'Code/preparations.R' ) )
+# source( paste0( path, 'Code/preparations.R' ) )
+
+source( 'Code/preparations.R' )
 
 ## ----------------------------------------------------------------------------#
 ## Create new data.frame with new structure:
@@ -51,7 +55,9 @@ source( paste0( path, 'Code/preparations.R' ) )
 # Play with the tolerance: minimum of 2
 #
 
-source( paste0( path, 'Code/Structure.R' ) )
+# source( paste0( path, 'Code/Structure.R' ) )
+
+source( 'Code/Structure.R' )
 
 # DF_str <- Restructure( DF, tolerance = 2 )
 # 
